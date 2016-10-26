@@ -1,0 +1,54 @@
+## CHECK FOR DEBUG STATE
+#set( $debugWidget = false )
+#if( $UtilMethods.isSet( $request.getParameter('debug') ) || ( $EDIT_MODE && $disableCallouts == false ) )
+  #set( $debugWidget = true )
+#end
+
+## INCLUDE SOME CSS SO WE CAN OUTLINE RENDERED CODE IN EDIT MODE
+#if( $debugWidget )
+<style>
+.rendered-vtl {border-color:red;}
+.extra-vtl {border-color:blue;}
+</style>
+#end
+
+## CHECK FOR CODE WE SHOULD RUN FIRST
+#if( $UtilMethods.isSet( $prerunCode ) )
+  #if( $debugWidget )
+<fieldset class="extra-vtl">
+  <legend>Parse Code Pre-Render</legend>
+  #end
+  $!{render.eval( $prerunCode )}
+  #if( $debugWidget )
+</fieldset>  <!-- .extra-vtl -->
+  #end
+#end
+
+## PARSE OUT IF MULTIPLE FILES SPECIFIED
+#if( $UtilMethods.isSet( $vtlFiles ) )
+  ## CREATE A LIST OF THE FILES
+  #set( $vtlFileList = $vtlFiles.split('\n') )
+  ## RENDER EACH FILE
+  #foreach( $vtlPath in $vtlFileList )
+    #if( $debugWidget )
+<fieldset class="rendered-vtl">
+  <legend>${vtlPath}</legend>
+    #end
+    #dotParse( $vtlPath )
+    #if( $debugWidget )
+</fieldset>  <!-- .rendered-vtl -->
+    #end
+  #end
+#end
+
+## CHECK FOR CODE WE SHOULD RUN LAST
+#if( $UtilMethods.isSet( $postrunCode ) )
+  #if( $debugWidget )
+<fieldset class="extra-vtl">
+  <legend>Parse Code Post-Render</legend>
+  #end
+  $!{render.eval( $postrunCode )}
+  #if( $debugWidget )
+</fieldset>  <!-- .extra-vtl -->
+  #end
+#end​​​​​​​​

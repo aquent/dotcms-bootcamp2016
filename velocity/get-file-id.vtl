@@ -1,0 +1,37 @@
+## This VTL is used to return the identifier of a file given a path and host like:
+## host=aquent.com path=/path/to/file.vtl
+## Returns :hostId:fileId:
+##
+#set($hostname  = $request.getParameter("host"))##
+#set($filepath  = $request.getParameter("path"))##
+#set($hostId    = "")##
+#set($fileId    = "")##
+##
+#if($UtilMethods.isSet($hostname) && $UtilMethods.isSet($filepath))##
+##
+## First we need a host identifier
+#set($hostQuery = "+contentType:Host +Host.hostName:${hostname}")##
+#set($hostList  = $dotcontent.pull($hostQuery,1,'modDate desc'))##
+#if($hostList.size() > 0)##
+##
+## Now we can pull the file
+#set($hostId    = ${hostList.get(0).identifier})##
+#set($fileQuery = "+contentType:FileAsset +conHost:${hostId} +_all:${esc.q}${filepath}${esc.q}")##
+#set($files     = $dotcontent.pull($fileQuery,1,'modDate desc'))##
+#if($files.size() > 0)##
+##
+#set($fileId    = $files.get(0).identifier)##
+##
+#elseif($EDIT_MODE || $UtilMethods.isSet($request.getParameter("debug")))##
+<p>No Files Found from: $fileQuery</p>##
+#end##if files found
+##
+#elseif($EDIT_MODE || $UtilMethods.isSet($request.getParameter("debug")))##
+<p>No host found from: $hostQuery</p>##
+#end##if found a host
+##
+#elseif($EDIT_MODE || $UtilMethods.isSet($request.getParameter("debug")))##
+<p>Host=$hostname or path=$filepath not set</p>##
+#end##if hostname and path passed
+##
+:$!{hostId}:$!{fileId}:

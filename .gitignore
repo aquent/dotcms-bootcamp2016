@@ -1,0 +1,35 @@
+### OS GENERATED FILES ###
+##########################
+.DS_Store
+.AppleDouble
+.LSOverride
+
+### OSGI Ignores ###
+####################
+osgi/build/
+osgi/generated/
+osgi/bin/
+osgi/.classpath
+osgi/.gradle/
+osgi/.project
+osgi/.settings/
+osgi/.checkstyle
+
+### Velocity Ignores ###
+##########################
+
+### Node ###
+velocity/node_modules
+velocity/jspm_packages
+
+### Bower ###
+velocity/src/bower_components
+velocity/.bower-cache
+velocity/.bower-registry
+velocity/.bower-tmp
+
+## SVG Processing Files/Folders
+velocity/src/**/svg/processed/
+velocity/src/**/scss/_svgicons.scss
+velocity/src/**/scss/_iconfont.scss
+velocity/src/**/scss/_icon-map.scss

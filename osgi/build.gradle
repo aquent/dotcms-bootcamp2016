@@ -1,0 +1,99 @@
+apply plugin: 'osgi'
+apply plugin: 'eclipse'
+apply plugin: 'propdeps'
+apply plugin: 'propdeps-maven'
+apply plugin: 'propdeps-eclipse'
+
+sourceCompatibility = '1.7'
+
+repositories {
+	mavenCentral()
+	maven { url "http://repo.dotcms.com/artifactory/libs-release" }
+}
+
+dependencies {
+	compile('com.dotcms:dotcms:3.2') { transitive = true }
+	provided('javax.servlet:servlet-api:2.5')
+}
+
+buildscript {
+	repositories {
+		maven { url 'http://repo.spring.io/plugins-release' }
+	}
+	dependencies {
+		classpath 'org.springframework.build.gradle:propdeps-plugin:0.0.7'
+	}
+}
+
+jar {
+	manifest {
+		name = 'dotCMS Bootcamp 2016 Example Code'
+		symbolicName = 'com.aquent.plugins.bootcamp2016'
+		instruction 'Bundle-Vendor', 'Aquent, LLC (cfalzone@aquent.com)'
+		instruction 'Bundle-Description', 'dotCMS Bootcamp 2016 Example Code'
+		instruction 'Bundle-DocURL', 'http://www.aquent.com'
+		instruction 'Bundle-Activator', 'com.aquent.Activator'
+		instruction 'DynamicImport-Package', '*'
+		instruction 'Import-Package',
+			'!org.springframework.*',
+			'*;version=0'
+		instruction 'Embed-Transitive', 'true'
+	}
+}
+
+/*
+ * reads the OSGI instruction "Embed-Dependency" and "Embed-Transitive"
+ * and sets the "Bundle-ClassPath" instruction as well as copy instruction for
+ * the related artifacts accordingly
+ */
+task processEmbedded << {
+	ext.embedInstruction = jar.manifest.instructions.get("Embed-Dependency")
+	ext.transitive = jar.manifest.instructions.get("Embed-Transitive");
+	if(embedInstruction != null){
+		def includedArtifacts = [] as Set
+		getDependencies(embedInstruction,transitive).each { dependency ->
+			dependency.moduleArtifacts.each { artifact ->
+				includedArtifacts.add(artifact.file)
+			}
+		}
+		jar.manifest.instruction("Bundle-ClassPath",'.') //add the default classpath
+		includedArtifacts.each { artifact ->
+			jar.from(artifact)
+			jar.manifest.instruction("Bundle-ClassPath",artifact.name)
+        }
+    }
+}
+
+/**
+ * Gets the list of ResolvedDependencies for the list of embeded dependency names
+ * @param embededList the list with the dependencies to embed
+ * @param recursive The embed transitive state
+ * @return the list of dependencies. An empty Set if none
+ */
+def getDependencies(embededList, recursive){
+	def dependencies = [] as Set //resolved Dependencies
+	def dependencyMap = [:];
+	// This only considers top level resolved dependencies, but other should
+	// not be embeded anyway.
+	project.configurations.runtime.resolvedConfiguration.firstLevelModuleDependencies.each { dependency ->
+		dependencyMap.put(dependency.moduleName,dependency)
+	}
+	embededList.each { embeded ->
+		ext.dependency = dependencyMap.get(embeded)
+		if(dependency != null){
+			println "dependency "+dependency.name
+			dependencies.add(dependency)
+			if(recursive){
+				dependency.children.each { child ->
+					println "  child "+child.name+" Parents: "+child.parents
+					dependencies.add(child)
+				}
+			}
+		} else {
+			println "WARNING: dependency "+embeded+" not found"
+		}
+	}
+	return dependencies
+}
+
+compileJava.dependsOn processEmbedded
